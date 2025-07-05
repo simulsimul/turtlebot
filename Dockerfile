@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y \
     ros-humble-nav2-util \
     ros-humble-nav2-velocity-smoother \
     ros-humble-nav2-waypoint-follower \
+    ros-humble-xacro \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
