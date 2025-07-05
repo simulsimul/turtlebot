@@ -35,6 +35,9 @@ CMakeLists.txt.user
 srv/_*.py
 *.pcd
 *.pyc
+__pycache__/
+*.pyo
+*.pyd
 qtcreator-*
 *.user
 
@@ -49,3 +52,25 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# ROS2 build artifacts
+/build
+/install
+/log
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
