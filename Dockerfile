@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y \
     python3-colcon-common-extensions \
     ros-humble-turtlebot3-bringup \
     ros-humble-turtlebot3-navigation2 \
-    ros-humble-rmw-cyclonedx-cpp \
     ros-humble-nav2-bringup \
     ros-humble-nav2-behaviors \
     ros-humble-nav2-bt-navigator \
@@ -24,7 +23,6 @@ RUN apt-get update && apt-get install -y \
     ros-humble-nav2-msgs \
     ros-humble-nav2-navfn-planner \
     ros-humble-nav2-planner \
-    ros-humble-nav2-recoveries \
     ros-humble-nav2-regulated-pure-pursuit-controller \
     ros-humble-nav2-rviz-plugins \
     ros-humble-nav2-simple-commander \
@@ -38,7 +36,6 @@ RUN apt-get update && apt-get install -y \
 # 라즈베리파이 환경 변수 설정
 ENV TURTLEBOT3_MODEL=burger
 ENV ROS_DOMAIN_ID=0
-ENV RMW_IMPLEMENTATION=rmw_cyclonedx_cpp
 
 # 라즈베리파이 메모리 최적화
 ENV MALLOC_ARENA_MAX=2
@@ -61,7 +58,6 @@ source /opt/ros/humble/setup.bash\n\
 echo "Starting TurtleBot3 on Raspberry Pi..."\n\
 echo "Model: $TURTLEBOT3_MODEL"\n\
 echo "ROS Domain ID: $ROS_DOMAIN_ID"\n\
-echo "RMW Implementation: $RMW_IMPLEMENTATION"\n\
 \n\
 # 하드웨어 준비 대기\n\
 echo "Waiting for hardware initialization..."\n\

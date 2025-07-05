@@ -63,7 +63,6 @@ sudo docker run -d \
     -v /dev:/dev \
     -e TURTLEBOT3_MODEL=burger \
     -e ROS_DOMAIN_ID=0 \
-    -e RMW_IMPLEMENTATION=rmw_cyclonedx_cpp \
     --memory=1g \
     --memory-swap=2g \
     --oom-kill-disable=false \
