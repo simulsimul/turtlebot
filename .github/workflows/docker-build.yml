@@ -41,8 +41,8 @@ jobs:
         platforms: linux/arm64
         push: ${{ github.event_name != 'pull_request' }}
         tags: |
-          simulsimul/turtlebot-auto:raspberry-pi
-          simulsimul/turtlebot-auto:arm64-latest
+          simulsimul/simulsimul:raspberry-pi
+          simulsimul/simulsimul:arm64-latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
@@ -57,8 +57,8 @@ jobs:
         platforms: linux/amd64
         push: ${{ github.event_name != 'pull_request' }}
         tags: |
-          simulsimul/turtlebot-auto:latest
-          simulsimul/turtlebot-auto:amd64-latest
+          simulsimul/simulsimul:latest
+          simulsimul/simulsimul:amd64-latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
@@ -68,8 +68,8 @@ jobs:
     - name: Create Multi-Arch Manifest
       if: github.event_name != 'pull_request'
       run: |
-        docker buildx imagetools create -t simulsimul/turtlebot-auto:multi-arch \
-          simulsimul/turtlebot-auto:amd64-latest \
-          simulsimul/turtlebot-auto:arm64-latest
+        docker buildx imagetools create -t simulsimul/simulsimul:multi-arch \
+          simulsimul/simulsimul:amd64-latest \
+          simulsimul/simulsimul:arm64-latest
     
  
