@@ -1,5 +1,5 @@
-# 라즈베리파이 최적화 - 경량 ROS 이미지 사용
-FROM osrf/ros:humble-ros-base
+# 라즈베리파이 ARM64 전용 최적화 이미지
+FROM arm64v8/ros:humble-ros-base
 
 # 라즈베리파이 최적화 환경 설정
 ENV DEBIAN_FRONTEND=noninteractive
