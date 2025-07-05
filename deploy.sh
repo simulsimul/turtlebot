@@ -1,42 +1,91 @@
 #!/bin/bash
 
 # TurtleBot 자동 배포 스크립트
-DOCKER_IMAGE="simulsimul/turtlebot-auto:latest"
+echo "TurtleBot 배포를 시작합니다."
 
-sudo apt update
-sudo apt install -y docker.io
+# 시스템 정보 확인
+echo "시스템 정보 확인 중..."
+echo "아키텍처: $(uname -m)"
+echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
+echo "메모리: $(free -h | grep Mem | awk '{print $2}')"
 
-sudo usermod -aG docker $USER
+# 라즈베리파이 확인
+if [[ $(uname -m) != "aarch64" ]] && [[ $(uname -m) != "armv7l" ]]; then
+    echo "경고: 라즈베리파이가 아닌 시스템에서 실행 중입니다."
+    echo "계속하시겠습니까? (y/N)"
+    read -r response
+    if [[ ! $response =~ ^[Yy]$ ]]; then
+        echo "배포를 취소합니다."
+        exit 1
+    fi
+fi
+
+# Docker 설치 확인 및 설치
+if ! command -v docker &> /dev/null; then
+    echo "Docker 설치 중..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sudo sh get-docker.sh
+    sudo usermod -aG docker $USER
+    rm get-docker.sh
+    echo "Docker 설치 완료. 시스템을 재시작하거나 다시 로그인해주세요."
+else
+    echo "Docker가 이미 설치되어 있습니다."
+fi
+
+# 기존 컨테이너 정리
+echo "기존 TurtleBot 컨테이너 정리 중..."
+sudo docker stop turtlebot-auto 2>/dev/null || true
+sudo docker rm turtlebot-auto 2>/dev/null || true
+
+# 라즈베리파이 최적화 이미지 다운로드
+echo "이미지 다운로드 중..."
+if [[ $(uname -m) == "aarch64" ]] || [[ $(uname -m) == "armv7l" ]]; then
+    IMAGE_TAG="raspberry-pi"
+    echo "라즈베리파이 전용 ARM64 이미지 사용"
+else
+    IMAGE_TAG="latest"
+    echo "AMD64 이미지 사용 (개발/테스트용)"
+fi
+
+sudo docker pull simulsimul/turtlebot-auto:$IMAGE_TAG
+
+# 라즈베리파이 하드웨어 권한 설정
+echo "하드웨어 권한 설정 중..."
+sudo usermod -a -G dialout $USER
+
+# TurtleBot 실행
+echo "TurtleBot 실행 중..."
 sudo docker run -d \
-  --name turtlebot-auto \
-  --privileged \
-  --network host \
-  --restart unless-stopped \
-  --device /dev/ttyUSB0:/dev/ttyUSB0 \
-  --device /dev/ttyACM0:/dev/ttyACM0 \
-  -e ROS_DOMAIN_ID=0 \
-  -e TURTLEBOT3_MODEL=burger \
-  $DOCKER_IMAGE
+    --name turtlebot-auto \
+    --restart unless-stopped \
+    --privileged \
+    --network host \
+    -v /dev:/dev \
+    -e TURTLEBOT3_MODEL=burger \
+    -e ROS_DOMAIN_ID=0 \
+    -e RMW_IMPLEMENTATION=rmw_cyclonedx_cpp \
+    --memory=1g \
+    --memory-swap=2g \
+    --oom-kill-disable=false \
+    simulsimul/turtlebot-auto:$IMAGE_TAG
 
-sudo tee /etc/systemd/system/turtlebot.service > /dev/null <<EOF
-[Unit]
-Description=TurtleBot Service
-After=docker.service
-Requires=docker.service
+# 실행 상태 확인
+echo "TurtleBot 시작 대기 중..."
+sleep 20
 
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/usr/bin/docker start turtlebot-auto
-ExecStop=/usr/bin/docker stop turtlebot-auto
+if sudo docker ps | grep -q turtlebot-auto; then
+    echo "TurtleBot이 성공적으로 시작되었습니다."
+    echo "컨테이너 상태:"
+    sudo docker ps | grep turtlebot-auto
+    echo ""
+    echo "로그 확인: sudo docker logs -f turtlebot-auto"
+    echo "중지: sudo docker stop turtlebot-auto"
+    echo "재시작: sudo docker restart turtlebot-auto"
+else
+    echo "TurtleBot 시작에 실패했습니다."
+    echo "로그 확인:"
+    sudo docker logs turtlebot-auto
+    exit 1
+fi
 
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable turtlebot
-
-echo "설치 완료. 재부팅 후 자동 시작됩니다."
-echo "수동 시작: docker start turtlebot-auto"
-echo "로그 확인: docker logs -f turtlebot-auto"
+echo "TurtleBot 배포가 완료되었습니다."
