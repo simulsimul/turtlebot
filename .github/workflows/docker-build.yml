@@ -44,24 +44,6 @@ jobs:
           ${{ secrets.DOCKER_USERNAME }}/simulsimul:raspberry-pi
           ${{ secrets.DOCKER_USERNAME }}/simulsimul:arm64-latest
     
-    # AMD64 빌드 (개발/테스트용)
-    - name: Build AMD64 for Development
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./Dockerfile
-        platforms: linux/amd64
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: |
-          ${{ secrets.DOCKER_USERNAME }}/simulsimul:latest
-          ${{ secrets.DOCKER_USERNAME }}/simulsimul:amd64-latest
-    
-    # 멀티 아키텍처 매니페스트 생성
-    - name: Create Multi-Arch Manifest
-      if: github.event_name != 'pull_request'
-      run: |
-        docker buildx imagetools create -t ${{ secrets.DOCKER_USERNAME }}/simulsimul:multi-arch \
-          ${{ secrets.DOCKER_USERNAME }}/simulsimul:amd64-latest \
-          ${{ secrets.DOCKER_USERNAME }}/simulsimul:arm64-latest
+
     
  
