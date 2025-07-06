@@ -34,11 +34,15 @@ ExecStart=/usr/bin/docker run -d \\
     -v /dev:/dev \\
     -e TURTLEBOT3_MODEL=burger \\
     -e ROS_DOMAIN_ID=0 \\
-    -e RMW_IMPLEMENTATION=rmw_cyclonedx_cpp \\
+    -e LDS_MODEL=LDS-01 \\
+    -e RCL_ASSERT_RMW_ID_MATCHES=0 \\
+    -e RCUTILS_LOGGING_BUFFERED_STREAM=1 \\
+    --device=/dev/ttyACM0:/dev/ttyACM0 \\
+    --device=/dev/ttyUSB0:/dev/ttyUSB0 \\
     --memory=1g \\
     --memory-swap=2g \\
     --oom-kill-disable=false \\
-    simulsimul/turtlebot-auto:raspberry-pi
+    ybkim4053/simulsimul:raspberry-pi
 ExecStop=/usr/bin/docker stop turtlebot-auto
 ExecStopPost=/usr/bin/docker rm turtlebot-auto
 TimeoutStartSec=300
@@ -71,6 +75,16 @@ sudo tee /etc/docker/daemon.json > /dev/null <<EOF
   }
 }
 EOF
+
+# udev 규칙 설정 (USB 장치 자동 권한)
+echo "USB 장치 udev 규칙 설정 중..."
+sudo tee /etc/udev/rules.d/99-turtlebot3.rules > /dev/null <<EOF
+# TurtleBot3 OpenCR Board
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", MODE="0666", GROUP="dialout"
+# LDS Sensor  
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE="0666", GROUP="dialout"
+EOF
+sudo udevadm control --reload-rules
 
 # 스왑 파일 생성 (메모리 부족 방지)
 if [ ! -f /swapfile ]; then

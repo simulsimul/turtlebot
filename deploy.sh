@@ -47,11 +47,16 @@ else
     echo "AMD64 이미지 사용 (개발/테스트용)"
 fi
 
-sudo docker pull simulsimul/turtlebot-auto:$IMAGE_TAG
+sudo docker pull ybkim4053/simulsimul:$IMAGE_TAG
 
 # 라즈베리파이 하드웨어 권한 설정
 echo "하드웨어 권한 설정 중..."
 sudo usermod -a -G dialout $USER
+
+# USB 장치 권한 설정
+echo "USB 장치 권한 설정 중..."
+sudo chmod 666 /dev/ttyACM0 2>/dev/null || echo "OpenCR board not connected"
+sudo chmod 666 /dev/ttyUSB0 2>/dev/null || echo "LDS sensor not connected"
 
 # TurtleBot 실행
 echo "TurtleBot 실행 중..."
@@ -63,10 +68,15 @@ sudo docker run -d \
     -v /dev:/dev \
     -e TURTLEBOT3_MODEL=burger \
     -e ROS_DOMAIN_ID=0 \
+    -e LDS_MODEL=LDS-01 \
+    -e RCL_ASSERT_RMW_ID_MATCHES=0 \
+    -e RCUTILS_LOGGING_BUFFERED_STREAM=1 \
+    --device=/dev/ttyACM0:/dev/ttyACM0 \
+    --device=/dev/ttyUSB0:/dev/ttyUSB0 \
     --memory=1g \
     --memory-swap=2g \
     --oom-kill-disable=false \
-    simulsimul/turtlebot-auto:$IMAGE_TAG
+    ybkim4053/simulsimul:$IMAGE_TAG
 
 # 실행 상태 확인
 echo "TurtleBot 시작 대기 중..."
