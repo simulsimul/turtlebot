@@ -26,6 +26,7 @@ WorkingDirectory=/home/$CURRENT_USER
 ExecStartPre=/bin/bash -c 'until docker info; do sleep 1; done'
 ExecStartPre=-/usr/bin/docker stop turtlebot-auto
 ExecStartPre=-/usr/bin/docker rm turtlebot-auto
+ExecStartPre=/usr/bin/docker pull ybkim4053/simulsimul:latest
 ExecStart=/usr/bin/docker run -d \\
     --name turtlebot-auto \\
     --restart unless-stopped \\

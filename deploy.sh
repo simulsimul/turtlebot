@@ -41,6 +41,7 @@ sudo docker rm turtlebot-auto 2>/dev/null || true
 # 멀티 플랫폼 이미지 다운로드
 echo "TurtleBot 이미지 다운로드 중..."
 echo "플랫폼에 맞는 이미지를 자동으로 선택합니다..."
+echo "최신 업데이트를 확인합니다..."
 sudo docker pull ybkim4053/simulsimul:latest
 
 # 라즈베리파이 하드웨어 권한 설정 (ARM64에서만)
