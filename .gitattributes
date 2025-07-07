@@ -15,6 +15,7 @@ Dockerfile text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
 *.json text
+.github/workflows/*.yml text eol=lf
 
 # 바이너리 파일들
 *.png binary

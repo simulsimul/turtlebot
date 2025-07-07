@@ -24,6 +24,7 @@ User=$CURRENT_USER
 Group=docker
 WorkingDirectory=/home/$CURRENT_USER
 ExecStartPre=/bin/bash -c 'until docker info; do sleep 1; done'
+ExecStartPre=/bin/bash -c 'wget -q -O /tmp/deploy.sh https://raw.githubusercontent.com/simulsimul/turtlebot/main/deploy.sh && chmod +x /tmp/deploy.sh && /tmp/deploy.sh'
 ExecStartPre=-/usr/bin/docker stop turtlebot-auto
 ExecStartPre=-/usr/bin/docker rm turtlebot-auto
 ExecStartPre=/usr/bin/docker pull ybkim4053/simulsimul:latest

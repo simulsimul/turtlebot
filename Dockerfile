@@ -67,6 +67,11 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
 # 작업 디렉토리 설정
 WORKDIR /opt/ros/humble
 
+# 배포 스크립트들을 이미지에 포함
+COPY deploy.sh /usr/local/bin/deploy.sh
+COPY raspberry-pi-setup.sh /usr/local/bin/raspberry-pi-setup.sh
+RUN chmod +x /usr/local/bin/deploy.sh /usr/local/bin/raspberry-pi-setup.sh
+
 # 플랫폼별 최적화 엔트리포인트 스크립트
 RUN echo '#!/bin/bash\n\
 set -e\n\
