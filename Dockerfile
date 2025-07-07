@@ -34,6 +34,8 @@ RUN apt-get update && apt-get install -y \
     ros-humble-nav2-bringup \
     ros-humble-joint-state-publisher \
     ros-humble-robot-state-publisher \
+    ros-humble-xacro \
+    ros-humble-urdf \
     ros-humble-geometry-msgs \
     ros-humble-sensor-msgs \
     ros-humble-nav-msgs \
