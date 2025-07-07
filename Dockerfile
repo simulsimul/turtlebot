@@ -9,7 +9,7 @@ ARG BUILDPLATFORM
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
-# 필수 시스템 패키지 설치
+# 필수 시스템 패키지 및 TurtleBot3 스택 설치 (한번에 처리)
 RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-colcon-common-extensions \
@@ -21,13 +21,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     udev \
     usbutils \
-    && rm -rf /var/lib/apt/lists/*
-
-# rosdep 초기화
-RUN rosdep init && rosdep update
-
-# TurtleBot3 전체 스택 설치 (공식 메타패키지)
-RUN apt-get update && apt-get install -y \
     ros-humble-turtlebot3 \
     ros-humble-turtlebot3-bringup \
     ros-humble-turtlebot3-cartographer \
@@ -38,6 +31,9 @@ RUN apt-get update && apt-get install -y \
     ros-humble-dynamixel-sdk \
     ros-humble-ros2-control \
     ros-humble-ros2-controllers \
+    ros-humble-nav2-bringup \
+    ros-humble-joint-state-publisher \
+    ros-humble-robot-state-publisher \
     ros-humble-geometry-msgs \
     ros-humble-sensor-msgs \
     ros-humble-nav-msgs \
@@ -46,6 +42,9 @@ RUN apt-get update && apt-get install -y \
     ros-humble-rclpy \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# rosdep 업데이트 (이미 초기화됨)
+RUN rosdep update
 
 # TurtleBot 환경 변수 설정
 ENV TURTLEBOT3_MODEL=burger
@@ -78,7 +77,7 @@ COPY webots_ros2_turtlebot/webots_ros2_turtlebot/auto_navigator.py /opt/turtlebo
 # 실행 권한 부여
 RUN chmod +x /opt/turtlebot3_ws/src/auto_navigator.py
 
-# 플랫폼별 최적화 엔트리포인트 스크립트
+# 시작 스크립트 생성
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
@@ -122,5 +121,31 @@ fi\n\
 exec "$@"' > /entrypoint.sh && \
 chmod +x /entrypoint.sh
 
+# 실행 스크립트 생성 (올바른 ROS2 노드 실행 방식)
+RUN echo '#!/bin/bash\n\
+source /opt/ros/humble/setup.bash\n\
+\n\
+# 하드웨어 노드 시작\n\
+echo "Starting TurtleBot3 hardware nodes..."\n\
+ros2 launch turtlebot3_bringup robot.launch.py &\n\
+BRINGUP_PID=$!\n\
+\n\
+# 하드웨어 노드가 준비될 때까지 대기\n\
+echo "Waiting for hardware nodes to be ready..."\n\
+sleep 15\n\
+\n\
+# 자율주행 노드 시작\n\
+echo "Starting auto navigation..."\n\
+cd /opt/turtlebot3_ws/src\n\
+python3 auto_navigator.py &\n\
+NAV_PID=$!\n\
+\n\
+# 시그널 핸들링\n\
+trap "echo \"Shutting down...\"; kill $BRINGUP_PID $NAV_PID 2>/dev/null; exit 0" SIGTERM SIGINT\n\
+\n\
+# 백그라운드 프로세스 대기\n\
+wait $BRINGUP_PID $NAV_PID' > /start_turtlebot.sh && \
+chmod +x /start_turtlebot.sh
+
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["bash", "-c", "source /opt/ros/humble/setup.bash && ros2 launch turtlebot3_bringup robot.launch.py & sleep 10 && python3 /opt/turtlebot3_ws/src/auto_navigator.py"] 
+CMD ["/start_turtlebot.sh"] 
