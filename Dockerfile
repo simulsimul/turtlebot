@@ -71,9 +71,9 @@ COPY webots_ros2_msgs /opt/ros/humble/src/webots_ros2_msgs
 
 # 의존성 설치 및 패키지 빌드
 RUN cd /opt/ros/humble && \
-    source /opt/ros/humble/setup.bash && \
+    bash -c "source /opt/ros/humble/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y && \
-    colcon build --packages-select webots_ros2_msgs webots_ros2_driver webots_ros2_turtlebot --symlink-install
+    colcon build --packages-select webots_ros2_msgs webots_ros2_driver webots_ros2_turtlebot --symlink-install"
 
 # 플랫폼별 최적화 엔트리포인트 스크립트
 RUN echo '#!/bin/bash\n\
