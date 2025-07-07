@@ -42,7 +42,7 @@ ExecStart=/usr/bin/docker run -d \\
     --memory=1g \\
     --memory-swap=2g \\
     --oom-kill-disable=false \\
-    ybkim4053/simulsimul:raspberry-pi
+    ybkim4053/simulsimul:latest
 ExecStop=/usr/bin/docker stop turtlebot-auto
 ExecStopPost=/usr/bin/docker rm turtlebot-auto
 TimeoutStartSec=300

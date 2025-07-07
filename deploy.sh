@@ -12,6 +12,7 @@ echo "메모리: $(free -h | grep Mem | awk '{print $2}')"
 # 라즈베리파이 확인
 if [[ $(uname -m) != "aarch64" ]] && [[ $(uname -m) != "armv7l" ]]; then
     echo "경고: 라즈베리파이가 아닌 시스템에서 실행 중입니다."
+    echo "개발/테스트 모드로 실행됩니다."
     echo "계속하시겠습니까? (y/N)"
     read -r response
     if [[ ! $response =~ ^[Yy]$ ]]; then
@@ -37,26 +38,28 @@ echo "기존 TurtleBot 컨테이너 정리 중..."
 sudo docker stop turtlebot-auto 2>/dev/null || true
 sudo docker rm turtlebot-auto 2>/dev/null || true
 
-# 라즈베리파이 최적화 이미지 다운로드
-echo "이미지 다운로드 중..."
+# 멀티 플랫폼 이미지 다운로드
+echo "TurtleBot 이미지 다운로드 중..."
+echo "플랫폼에 맞는 이미지를 자동으로 선택합니다..."
+sudo docker pull ybkim4053/simulsimul:latest
+
+# 라즈베리파이 하드웨어 권한 설정 (ARM64에서만)
 if [[ $(uname -m) == "aarch64" ]] || [[ $(uname -m) == "armv7l" ]]; then
-    IMAGE_TAG="raspberry-pi"
-    echo "라즈베리파이 전용 ARM64 이미지 사용"
+    echo "라즈베리파이 하드웨어 권한 설정 중..."
+    sudo usermod -a -G dialout $USER
+    
+    # USB 장치 권한 설정
+    echo "USB 장치 권한 설정 중..."
+    sudo chmod 666 /dev/ttyACM0 2>/dev/null || echo "OpenCR board not connected"
+    sudo chmod 666 /dev/ttyUSB0 2>/dev/null || echo "LDS sensor not connected"
+    
+    DEVICE_OPTIONS="--device=/dev/ttyACM0:/dev/ttyACM0 --device=/dev/ttyUSB0:/dev/ttyUSB0"
+    MEMORY_OPTIONS="--memory=1g --memory-swap=2g --oom-kill-disable=false"
 else
-    IMAGE_TAG="latest"
-    echo "AMD64 이미지 사용 (개발/테스트용)"
+    echo "개발/테스트 모드: 하드웨어 장치 설정을 건너뜁니다."
+    DEVICE_OPTIONS=""
+    MEMORY_OPTIONS="--memory=2g"
 fi
-
-sudo docker pull ybkim4053/simulsimul:$IMAGE_TAG
-
-# 라즈베리파이 하드웨어 권한 설정
-echo "하드웨어 권한 설정 중..."
-sudo usermod -a -G dialout $USER
-
-# USB 장치 권한 설정
-echo "USB 장치 권한 설정 중..."
-sudo chmod 666 /dev/ttyACM0 2>/dev/null || echo "OpenCR board not connected"
-sudo chmod 666 /dev/ttyUSB0 2>/dev/null || echo "LDS sensor not connected"
 
 # TurtleBot 실행
 echo "TurtleBot 실행 중..."
@@ -71,12 +74,9 @@ sudo docker run -d \
     -e LDS_MODEL=LDS-01 \
     -e RCL_ASSERT_RMW_ID_MATCHES=0 \
     -e RCUTILS_LOGGING_BUFFERED_STREAM=1 \
-    --device=/dev/ttyACM0:/dev/ttyACM0 \
-    --device=/dev/ttyUSB0:/dev/ttyUSB0 \
-    --memory=1g \
-    --memory-swap=2g \
-    --oom-kill-disable=false \
-    ybkim4053/simulsimul:$IMAGE_TAG
+    $DEVICE_OPTIONS \
+    $MEMORY_OPTIONS \
+    ybkim4053/simulsimul:latest
 
 # 실행 상태 확인
 echo "TurtleBot 시작 대기 중..."
