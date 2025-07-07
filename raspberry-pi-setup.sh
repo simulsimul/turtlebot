@@ -36,7 +36,7 @@ ExecStart=/usr/bin/docker run -d \\
     -e TURTLEBOT3_MODEL=burger \\
     -e ROS_DOMAIN_ID=0 \\
     -e LDS_MODEL=LDS-01 \\
-    -e RCL_ASSERT_RMW_ID_MATCHES=0 \\
+    -e RMW_IMPLEMENTATION=rmw_fastrtps_cpp \\
     -e RCUTILS_LOGGING_BUFFERED_STREAM=1 \\
     --device=/dev/ttyACM0:/dev/ttyACM0 \\
     --device=/dev/ttyUSB0:/dev/ttyUSB0 \\
@@ -46,7 +46,7 @@ ExecStart=/usr/bin/docker run -d \\
     ybkim4053/simulsimul:latest
 ExecStop=/usr/bin/docker stop turtlebot-auto
 ExecStopPost=/usr/bin/docker rm turtlebot-auto
-TimeoutStartSec=300
+TimeoutStartSec=1800
 TimeoutStopSec=30
 
 [Install]
@@ -97,38 +97,14 @@ if [ ! -f /swapfile ]; then
     echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 fi
 
-# 부팅 시 자동 로그인 설정 (선택사항)
-echo "자동 로그인 설정을 원하시나요? (y/N)"
-read -r auto_login
-if [[ $auto_login =~ ^[Yy]$ ]]; then
-    sudo systemctl edit getty@tty1.service --full --force <<EOF
-[Unit]
-Description=Getty on %i
-Documentation=man:agetty(8) man:systemd-getty-generator(8)
-Documentation=http://0pointer.de/blog/projects/serial-console.html
-After=systemd-user-sessions.service plymouth-quit-wait.service
-After=rc-local.service
-Before=getty.target
-ConditionPathExists=/dev/tty0
-
+# 부팅 시 자동 로그인 설정
+echo "자동 로그인 설정 중..."
+sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
+sudo tee /etc/systemd/system/getty@tty1.service.d/override.conf > /dev/null <<EOF
 [Service]
+ExecStart=
 ExecStart=-/sbin/agetty -a $CURRENT_USER --noclear %i \$TERM
-Type=idle
-Restart=always
-RestartSec=0
-UtmpIdentifier=%i
-TTYPath=/dev/%i
-TTYReset=yes
-TTYVHangup=yes
-TTYVTDisallocate=yes
-KillMode=process
-IgnoreSIGPIPE=no
-SendSIGHUP=yes
-
-[Install]
-WantedBy=getty.target
 EOF
-fi
 
 # 완료 메시지
 echo "TurtleBot 자동 실행 설정이 완료되었습니다."

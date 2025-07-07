@@ -67,6 +67,14 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
 # 작업 디렉토리 설정
 WORKDIR /opt/ros/humble
 
+# 자율주행 코드 복사
+COPY webots_ros2_turtlebot /opt/ros/humble/src/webots_ros2_turtlebot
+
+# 패키지 빌드
+RUN cd /opt/ros/humble && \
+    colcon build --packages-select webots_ros2_turtlebot && \
+    source install/setup.bash
+
 # 플랫폼별 최적화 엔트리포인트 스크립트
 RUN echo '#!/bin/bash\n\
 set -e\n\
@@ -112,4 +120,4 @@ exec "$@"' > /entrypoint.sh && \
 chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["ros2", "launch", "turtlebot3_bringup", "robot.launch.py"] 
+CMD ["bash", "-c", "source /opt/ros/humble/install/setup.bash && ros2 launch turtlebot3_bringup robot.launch.py & sleep 10 && ros2 run webots_ros2_turtlebot auto_navigator"] 
