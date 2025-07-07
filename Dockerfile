@@ -1,4 +1,4 @@
-# 공식 TurtleBot3 베이스 이미지 사용
+# 공식 ROS2 Humble 베이스 이미지 사용 (필요한 패키지만 설치)
 FROM ros:humble-ros-base
 
 # 플랫폼 정보 가져오기
@@ -47,6 +47,12 @@ RUN apt-get update && apt-get install -y \
 
 # rosdep 업데이트 (이미 초기화됨)
 RUN rosdep update
+
+# xacro 실행 파일 PATH 설정 및 확인
+RUN echo 'export PATH="/opt/ros/humble/bin:$PATH"' >> /etc/bash.bashrc && \
+    echo 'source /opt/ros/humble/setup.bash' >> /etc/bash.bashrc && \
+    /bin/bash -c "source /opt/ros/humble/setup.bash && which xacro" && \
+    ln -sf /opt/ros/humble/bin/xacro /usr/local/bin/xacro
 
 # TurtleBot 환경 변수 설정
 ENV TURTLEBOT3_MODEL=burger
@@ -126,6 +132,11 @@ chmod +x /entrypoint.sh
 # 실행 스크립트 생성 (올바른 ROS2 노드 실행 방식)
 RUN echo '#!/bin/bash\n\
 source /opt/ros/humble/setup.bash\n\
+export PATH="/opt/ros/humble/bin:$PATH"\n\
+\n\
+# xacro 확인\n\
+echo "Checking xacro availability..."\n\
+which xacro || echo "xacro not found in PATH"\n\
 \n\
 # 하드웨어 노드 시작\n\
 echo "Starting TurtleBot3 hardware nodes..."\n\
