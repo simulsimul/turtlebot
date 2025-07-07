@@ -1,5 +1,5 @@
-# 멀티 플랫폼 지원 (ARM64/AMD64)
-FROM ros:humble-ros-core
+# 공식 TurtleBot3 베이스 이미지 사용
+FROM ros:humble-ros-base
 
 # 플랫폼 정보 가져오기
 ARG TARGETPLATFORM
@@ -9,12 +9,11 @@ ARG BUILDPLATFORM
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
-# 필수 개발 도구 및 ROS2 패키지 설치
+# 필수 시스템 패키지 설치
 RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-colcon-common-extensions \
     python3-rosdep \
-    python3-vcstool \
     build-essential \
     cmake \
     git \
@@ -27,17 +26,24 @@ RUN apt-get update && apt-get install -y \
 # rosdep 초기화
 RUN rosdep init && rosdep update
 
-# ROS2 패키지 설치
+# TurtleBot3 전체 스택 설치 (공식 메타패키지)
 RUN apt-get update && apt-get install -y \
-    ros-humble-desktop \
+    ros-humble-turtlebot3 \
     ros-humble-turtlebot3-bringup \
+    ros-humble-turtlebot3-cartographer \
     ros-humble-turtlebot3-navigation2 \
-    ros-humble-turtlebot3-node \
+    ros-humble-turtlebot3-teleop \
+    ros-humble-turtlebot3-example \
     ros-humble-hls-lfcd-lds-driver \
     ros-humble-dynamixel-sdk \
-    ros-humble-xacro \
-    ros-humble-robot-state-publisher \
-    ros-humble-joint-state-publisher \
+    ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
+    ros-humble-geometry-msgs \
+    ros-humble-sensor-msgs \
+    ros-humble-nav-msgs \
+    ros-humble-tf2 \
+    ros-humble-tf2-ros \
+    ros-humble-rclpy \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -63,17 +69,14 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
 # 작업 디렉토리 설정
 WORKDIR /opt/ros/humble
 
-# 워크스페이스 생성 및 필요한 패키지들 복사
-RUN mkdir -p /opt/ros/humble/src
-COPY webots_ros2_turtlebot /opt/ros/humble/src/webots_ros2_turtlebot
-COPY webots_ros2_driver /opt/ros/humble/src/webots_ros2_driver
-COPY webots_ros2_msgs /opt/ros/humble/src/webots_ros2_msgs
+# 자율주행 코드를 위한 워크스페이스 생성
+RUN mkdir -p /opt/turtlebot3_ws/src
 
-# 의존성 설치 및 패키지 빌드
-RUN cd /opt/ros/humble && \
-    bash -c "source /opt/ros/humble/setup.bash && \
-    rosdep install --from-paths src --ignore-src -r -y && \
-    colcon build --packages-select webots_ros2_msgs webots_ros2_driver webots_ros2_turtlebot --symlink-install"
+# 자율주행 코드 복사
+COPY webots_ros2_turtlebot/webots_ros2_turtlebot/auto_navigator.py /opt/turtlebot3_ws/src/
+
+# 실행 권한 부여
+RUN chmod +x /opt/turtlebot3_ws/src/auto_navigator.py
 
 # 플랫폼별 최적화 엔트리포인트 스크립트
 RUN echo '#!/bin/bash\n\
@@ -120,4 +123,4 @@ exec "$@"' > /entrypoint.sh && \
 chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["bash", "-c", "source /opt/ros/humble/setup.bash && source /opt/ros/humble/install/setup.bash && ros2 launch turtlebot3_bringup robot.launch.py & sleep 10 && ros2 run webots_ros2_turtlebot auto_navigator"] 
+CMD ["bash", "-c", "source /opt/ros/humble/setup.bash && ros2 launch turtlebot3_bringup robot.launch.py & sleep 10 && python3 /opt/turtlebot3_ws/src/auto_navigator.py"] 
