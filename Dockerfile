@@ -1,5 +1,5 @@
 # 멀티 플랫폼 지원 (ARM64/AMD64)
-FROM ros:humble-ros-base
+FROM ros:humble-ros-core
 
 # 플랫폼 정보 가져오기
 ARG TARGETPLATFORM
@@ -9,36 +9,32 @@ ARG BUILDPLATFORM
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
-# 공통 패키지 설치
+# 필수 개발 도구 및 ROS2 패키지 설치
 RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-colcon-common-extensions \
+    python3-rosdep \
+    python3-vcstool \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    curl \
     udev \
     usbutils \
+    && rm -rf /var/lib/apt/lists/*
+
+# rosdep 초기화
+RUN rosdep init && rosdep update
+
+# ROS2 패키지 설치
+RUN apt-get update && apt-get install -y \
+    ros-humble-desktop \
     ros-humble-turtlebot3-bringup \
     ros-humble-turtlebot3-navigation2 \
     ros-humble-turtlebot3-node \
     ros-humble-hls-lfcd-lds-driver \
     ros-humble-dynamixel-sdk \
-    ros-humble-nav2-bringup \
-    ros-humble-nav2-behaviors \
-    ros-humble-nav2-bt-navigator \
-    ros-humble-nav2-controller \
-    ros-humble-nav2-core \
-    ros-humble-nav2-costmap-2d \
-    ros-humble-nav2-dwb-controller \
-    ros-humble-nav2-lifecycle-manager \
-    ros-humble-nav2-map-server \
-    ros-humble-nav2-msgs \
-    ros-humble-nav2-navfn-planner \
-    ros-humble-nav2-planner \
-    ros-humble-nav2-regulated-pure-pursuit-controller \
-    ros-humble-nav2-rviz-plugins \
-    ros-humble-nav2-simple-commander \
-    ros-humble-nav2-smoother \
-    ros-humble-nav2-util \
-    ros-humble-nav2-velocity-smoother \
-    ros-humble-nav2-waypoint-follower \
     ros-humble-xacro \
     ros-humble-robot-state-publisher \
     ros-humble-joint-state-publisher \
@@ -67,13 +63,17 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
 # 작업 디렉토리 설정
 WORKDIR /opt/ros/humble
 
-# 자율주행 코드 복사
+# 워크스페이스 생성 및 필요한 패키지들 복사
+RUN mkdir -p /opt/ros/humble/src
 COPY webots_ros2_turtlebot /opt/ros/humble/src/webots_ros2_turtlebot
+COPY webots_ros2_driver /opt/ros/humble/src/webots_ros2_driver
+COPY webots_ros2_msgs /opt/ros/humble/src/webots_ros2_msgs
 
-# 패키지 빌드
+# 의존성 설치 및 패키지 빌드
 RUN cd /opt/ros/humble && \
-    colcon build --packages-select webots_ros2_turtlebot && \
-    source install/setup.bash
+    source /opt/ros/humble/setup.bash && \
+    rosdep install --from-paths src --ignore-src -r -y && \
+    colcon build --packages-select webots_ros2_msgs webots_ros2_driver webots_ros2_turtlebot --symlink-install
 
 # 플랫폼별 최적화 엔트리포인트 스크립트
 RUN echo '#!/bin/bash\n\
@@ -120,4 +120,4 @@ exec "$@"' > /entrypoint.sh && \
 chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["bash", "-c", "source /opt/ros/humble/install/setup.bash && ros2 launch turtlebot3_bringup robot.launch.py & sleep 10 && ros2 run webots_ros2_turtlebot auto_navigator"] 
+CMD ["bash", "-c", "source /opt/ros/humble/setup.bash && source /opt/ros/humble/install/setup.bash && ros2 launch turtlebot3_bringup robot.launch.py & sleep 10 && ros2 run webots_ros2_turtlebot auto_navigator"] 
