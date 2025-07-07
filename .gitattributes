@@ -1,6 +1,5 @@
 # Linux 스크립트 파일들은 항상 LF 줄바꿈 사용
 *.sh text eol=lf
-deploy.sh text eol=lf
 raspberry-pi-setup.sh text eol=lf
 
 # Dockerfile도 LF 사용
