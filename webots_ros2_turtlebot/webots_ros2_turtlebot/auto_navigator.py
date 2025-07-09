@@ -7,6 +7,7 @@ Automatically starts moving when powered on
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
@@ -17,12 +18,19 @@ class AutoNavigator(Node):
     def __init__(self):
         super().__init__('auto_navigator')
         
+        # QoS Profile for sensor data (compatible with TurtleBot3)
+        sensor_qos = QoSProfile(
+            depth=10,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE
+        )
+        
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         
-        # Subscribers
+        # Subscribers with proper QoS
         self.scan_sub = self.create_subscription(
-            LaserScan, '/scan', self.scan_callback, 10)
+            LaserScan, '/scan', self.scan_callback, sensor_qos)
         self.odom_sub = self.create_subscription(
             Odometry, '/odom', self.odom_callback, 10)
         
