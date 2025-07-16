@@ -42,6 +42,8 @@ RUN apt-get update && apt-get install -y \
     ros-humble-tf2 \
     ros-humble-tf2-ros \
     ros-humble-rclpy \
+    python3-numpy \
+    python3-sklearn \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -63,6 +65,9 @@ ENV OPENCR_MODEL=burger
 ENV RCL_ASSERT_RMW_ID_MATCHES=0
 ENV RCUTILS_LOGGING_BUFFERED_STREAM=1
 
+# 벽 추종 알고리즘 선택 환경 변수 (기본값: rule)
+ENV WALL_FOLLOWER_TYPE=rule
+
 # ARM64 (라즈베리파이)용 메모리 최적화 설정
 RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     echo "Setting up ARM64 optimizations..."; \
@@ -76,14 +81,18 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
 # 작업 디렉토리 설정
 WORKDIR /opt/ros/humble
 
-# 자율주행 코드를 위한 워크스페이스 생성
+# TurtleBot 워크스페이스 생성
 RUN mkdir -p /opt/turtlebot3_ws/src
 
-# 자율주행 코드 복사
-COPY webots_ros2_turtlebot/webots_ros2_turtlebot/auto_navigator.py /opt/turtlebot3_ws/src/
+# 전체 webots_ros2_turtlebot 패키지 복사
+COPY webots_ros2_turtlebot/ /opt/turtlebot3_ws/src/webots_ros2_turtlebot/
+
+# 패키지 빌드
+RUN cd /opt/turtlebot3_ws && \
+    /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --packages-select webots_ros2_turtlebot"
 
 # 실행 권한 부여
-RUN chmod +x /opt/turtlebot3_ws/src/auto_navigator.py
+RUN chmod +x /opt/turtlebot3_ws/src/webots_ros2_turtlebot/webots_ros2_turtlebot/*.py
 
 # 시작 스크립트 생성
 RUN echo '#!/bin/bash\n\
@@ -91,6 +100,7 @@ set -e\n\
 \n\
 # ROS 환경 설정\n\
 source /opt/ros/humble/setup.bash\n\
+source /opt/turtlebot3_ws/install/setup.bash\n\
 \n\
 # 플랫폼 감지\n\
 ARCH=$(uname -m)\n\
@@ -99,6 +109,7 @@ echo "Model: $TURTLEBOT3_MODEL"\n\
 echo "LDS Model: $LDS_MODEL"\n\
 echo "ROS Domain ID: $ROS_DOMAIN_ID"\n\
 echo "OpenCR Port: $OPENCR_PORT"\n\
+echo "Wall Follower Type: $WALL_FOLLOWER_TYPE"\n\
 \n\
 # ARM64 (라즈베리파이)에서만 하드웨어 설정\n\
 if [ "$ARCH" = "aarch64" ]; then\n\
@@ -129,9 +140,10 @@ fi\n\
 exec "$@"' > /entrypoint.sh && \
 chmod +x /entrypoint.sh
 
-# 실행 스크립트 생성 (올바른 ROS2 노드 실행 방식)
+# 실행 스크립트 생성 (알고리즘 선택 기능 포함)
 RUN echo '#!/bin/bash\n\
 source /opt/ros/humble/setup.bash\n\
+source /opt/turtlebot3_ws/install/setup.bash\n\
 export PATH="/opt/ros/humble/bin:$PATH"\n\
 \n\
 # xacro 확인\n\
@@ -147,17 +159,36 @@ BRINGUP_PID=$!\n\
 echo "Waiting for hardware nodes to be ready..."\n\
 sleep 15\n\
 \n\
-# 자율주행 노드 시작\n\
-echo "Starting auto navigation..."\n\
-cd /opt/turtlebot3_ws/src\n\
-python3 auto_navigator.py &\n\
-NAV_PID=$!\n\
+# 선택된 알고리즘에 따라 적절한 노드 시작\n\
+echo "Starting wall following algorithm: $WALL_FOLLOWER_TYPE"\n\
+case "$WALL_FOLLOWER_TYPE" in\n\
+    "rule")\n\
+        echo "Starting Rule-based wall follower..."\n\
+        ros2 run webots_ros2_turtlebot wall_follower_rule &\n\
+        ALGO_PID=$!\n\
+        ;;\n\
+    "pid")\n\
+        echo "Starting PID-based wall follower..."\n\
+        ros2 run webots_ros2_turtlebot wall_follower_pid &\n\
+        ALGO_PID=$!\n\
+        ;;\n\
+    "ml")\n\
+        echo "Starting ML-based wall follower..."\n\
+        ros2 run webots_ros2_turtlebot wall_follower_ml &\n\
+        ALGO_PID=$!\n\
+        ;;\n\
+    *)\n\
+        echo "Unknown algorithm type: $WALL_FOLLOWER_TYPE, using rule-based"\n\
+        ros2 run webots_ros2_turtlebot wall_follower_rule &\n\
+        ALGO_PID=$!\n\
+        ;;\n\
+esac\n\
 \n\
 # 시그널 핸들링\n\
-trap "echo \"Shutting down...\"; kill $BRINGUP_PID $NAV_PID 2>/dev/null; exit 0" SIGTERM SIGINT\n\
+trap "echo \"Shutting down...\"; kill $BRINGUP_PID $ALGO_PID 2>/dev/null; exit 0" SIGTERM SIGINT\n\
 \n\
 # 백그라운드 프로세스 대기\n\
-wait $BRINGUP_PID $NAV_PID' > /start_turtlebot.sh && \
+wait $BRINGUP_PID $ALGO_PID' > /start_turtlebot.sh && \
 chmod +x /start_turtlebot.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

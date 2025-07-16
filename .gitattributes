@@ -8,6 +8,10 @@ Dockerfile text eol=lf
 # Python 파일들도 LF 사용
 *.py text eol=lf
 
+# 데이터 파일들도 LF 사용
+*.csv text eol=lf
+*.dat text eol=lf
+
 # 일반 텍스트 파일들
 *.txt text
 *.md text
@@ -15,6 +19,14 @@ Dockerfile text eol=lf
 *.yaml text eol=lf
 *.json text
 .github/workflows/*.yml text eol=lf
+
+# ROS2 관련 파일들
+*.msg text eol=lf
+*.srv text eol=lf
+*.urdf text eol=lf
+*.xacro text eol=lf
+*.launch text eol=lf
+*.launch.py text eol=lf
 
 # 바이너리 파일들
 *.png binary

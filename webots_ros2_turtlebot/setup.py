@@ -11,15 +11,10 @@ data_files.append(('share/' + package_name + '/launch', [
     'launch/hardware_launch.py'
 ]))
 data_files.append(('share/' + package_name + '/resource', [
-    'resource/turtlebot3_burger_example_map.pgm',
-    'resource/turtlebot3_burger_example_map.yaml',
-    'resource/turtlebot_webots.urdf',
     'resource/ros2control.yml',
-    'resource/nav2_params.yaml'
-]))
-
-data_files.append(('share/' + package_name + '/worlds', [
-    'worlds/turtlebot3_burger_example.wbt', 'worlds/.turtlebot3_burger_example.wbproj',
+    'resource/nav2_params.yaml',
+    'resource/data.csv',
+    'resource/data2.csv'
 ]))
 data_files.append(('share/' + package_name, ['package.xml']))
 
@@ -29,7 +24,7 @@ setup(
     version='2025.0.0',
     packages=[package_name],
     data_files=data_files,
-    install_requires=['setuptools', 'launch'],
+    install_requires=['setuptools', 'launch', 'numpy', 'scikit-learn'],
     zip_safe=True,
     author='Cyberbotics',
     author_email='support@cyberbotics.com',
@@ -48,6 +43,9 @@ setup(
     entry_points={
         'console_scripts': [
             'auto_navigator = webots_ros2_turtlebot.auto_navigator:main',
+            'wall_follower_rule = webots_ros2_turtlebot.wall_follower_rule:main',
+            'wall_follower_pid = webots_ros2_turtlebot.wall_follower_pid:main',
+            'wall_follower_ml = webots_ros2_turtlebot.wall_follower_ml:main',
         ],
         'launch.frontend.launch_extension': ['launch_ros = launch_ros']
     }

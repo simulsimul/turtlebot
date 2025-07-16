@@ -8,11 +8,58 @@ echo "TurtleBot 자동 실행 설정을 시작합니다."
 CURRENT_USER=$(whoami)
 echo "현재 사용자: $CURRENT_USER"
 
+# 벽 추종 알고리즘 선택 메뉴
+echo ""
+echo "======================================"
+echo "TurtleBot 벽 추종 알고리즘을 선택하세요:"
+echo "======================================"
+echo "1) 규칙 기반 (Rule-based)"
+echo "   - 단순한 진실표 기반 행동 제어"
+echo "   - 빠른 반응, 안정적인 성능"
+echo ""
+echo "2) PID 제어 (PID-based)" 
+echo "   - 일정한 거리 유지 제어"
+echo "   - 부드러운 움직임, 정밀한 제어"
+echo ""
+echo "3) 머신러닝 (Machine Learning)"
+echo "   - 학습된 모델 기반 제어"
+echo "   - 복잡한 환경 대응 가능"
+echo ""
+echo "======================================"
+
+while true; do
+    read -p "선택하세요 (1-3): " ALGORITHM_CHOICE
+    case $ALGORITHM_CHOICE in
+        1)
+            WALL_FOLLOWER_TYPE="rule"
+            ALGORITHM_NAME="규칙 기반"
+            break
+            ;;
+        2)
+            WALL_FOLLOWER_TYPE="pid"
+            ALGORITHM_NAME="PID 제어"
+            break
+            ;;
+        3)
+            WALL_FOLLOWER_TYPE="ml"
+            ALGORITHM_NAME="머신러닝"
+            break
+            ;;
+        *)
+            echo "잘못된 선택입니다. 1-3 중에서 선택해주세요."
+            ;;
+    esac
+done
+
+echo ""
+echo "선택된 알고리즘: $ALGORITHM_NAME ($WALL_FOLLOWER_TYPE)"
+echo ""
+
 # systemd 서비스 파일 생성
 echo "systemd 서비스 파일 생성 중..."
 sudo tee /etc/systemd/system/turtlebot-auto.service > /dev/null <<EOF
 [Unit]
-Description=TurtleBot Auto Start Service
+Description=TurtleBot Auto Start Service ($ALGORITHM_NAME)
 After=docker.service network-online.target
 Wants=network-online.target
 Requires=docker.service
@@ -39,6 +86,7 @@ ExecStart=/usr/bin/docker run -d \\
     -e LDS_MODEL=LDS-01 \\
     -e RMW_IMPLEMENTATION=rmw_fastrtps_cpp \\
     -e RCUTILS_LOGGING_BUFFERED_STREAM=1 \\
+    -e WALL_FOLLOWER_TYPE=$WALL_FOLLOWER_TYPE \\
     --device=/dev/ttyACM0:/dev/ttyACM0 \\
     --device=/dev/ttyUSB0:/dev/ttyUSB0 \\
     --memory=1g \\
@@ -52,6 +100,16 @@ TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target
+EOF
+
+# 알고리즘 설정 저장 (나중에 확인용)
+echo "알고리즘 설정 저장 중..."
+sudo tee /etc/turtlebot-algorithm.conf > /dev/null <<EOF
+# TurtleBot 벽 추종 알고리즘 설정
+WALL_FOLLOWER_TYPE=$WALL_FOLLOWER_TYPE
+ALGORITHM_NAME=$ALGORITHM_NAME
+SETUP_DATE=$(date)
+SETUP_USER=$CURRENT_USER
 EOF
 
 # 서비스 활성화
@@ -108,9 +166,13 @@ ExecStart=-/sbin/agetty -a $CURRENT_USER --noclear %i \$TERM
 EOF
 
 # 완료 메시지
+echo ""
+echo "======================================"
 echo "TurtleBot 자동 실행 설정이 완료되었습니다."
+echo "======================================"
 echo ""
 echo "설정 내용:"
+echo "  - 선택된 알고리즘: $ALGORITHM_NAME ($WALL_FOLLOWER_TYPE)"
 echo "  - systemd 서비스: turtlebot-auto.service"
 echo "  - 부팅 시 자동 실행: 활성화"
 echo "  - GPU 메모리: 16MB (최적화)"
@@ -124,8 +186,14 @@ echo "서비스 상태 확인:"
 echo "  sudo systemctl status turtlebot-auto"
 echo "  sudo docker logs -f turtlebot-auto"
 echo ""
+echo "알고리즘 설정 확인:"
+echo "  cat /etc/turtlebot-algorithm.conf"
+echo ""
 echo "서비스 중지:"
 echo "  sudo systemctl stop turtlebot-auto"
 echo ""
 echo "서비스 비활성화:"
-echo "  sudo systemctl disable turtlebot-auto" 
+echo "  sudo systemctl disable turtlebot-auto"
+echo ""
+echo "알고리즘 변경 시 이 스크립트를 다시 실행하세요."
+echo "======================================" 
