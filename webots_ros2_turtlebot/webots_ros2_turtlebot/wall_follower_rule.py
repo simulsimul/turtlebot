@@ -17,12 +17,12 @@ class WallFollowerRule(WallFollowerBase):
         super().__init__('wall_follower_rule')
         
         # Rule-based algorithm parameters
-        self.front_threshold = 0.30  # meters
-        self.side_threshold = 0.30   # meters
-        self.corner_threshold = 0.30 # meters
+        self.front_threshold = 0.25  # meters
+        self.side_threshold = 0.25   # meters
+        self.corner_threshold = 0.25 # meters
         
         # Speed parameters (converted from Webots values)
-        self.base_speed = 0.15      # m/s (was BASE_SPEED = 5 in Webots)
+        self.base_speed = 0.10      # m/s (was BASE_SPEED = 5 in Webots)
         self.turn_speed_ratio = 0.1  # for turning (was BASE_SPEED/9 in Webots)
         
         self.get_logger().info('Rule-based wall follower initialized')
@@ -51,6 +51,7 @@ class WallFollowerRule(WallFollowerBase):
             f'Corner: {left_corner} ({corner_dist:.2f}m)'
         )
         
+        """
         # Apply rule-based logic (truth table)
         if front_wall:
             # Priority 1: Avoid front wall
@@ -63,6 +64,15 @@ class WallFollowerRule(WallFollowerBase):
             return self.move_forward()
         else:
             # Priority 4: No wall on left, turn left to find wall
+            return self.turn_left()
+        """
+        if front_wall:
+            return self.rotate_right()
+        elif left_wall:
+            return self.move_forward()
+        elif left_corner:
+            return self.rotate_right()
+        else:
             return self.turn_left()
     
     def move_forward(self) -> Twist:
