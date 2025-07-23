@@ -152,7 +152,12 @@ class WallFollowerBase(Node, ABC):
         if math.isnan(range_value) or math.isinf(range_value):
             return self.scan_data.range_max
         
-        return max(self.scan_data.range_min, min(range_value, self.scan_data.range_max))
+        if range_value < self.scan_data.range_min:  # 측정 실패 (0이나 아주 작은 값)
+            return self.scan_data.range_max  # 최대 거리로 표시
+        else:
+            return min(range_value, self.scan_data.range_max)  # 정상 측정값 사용
+
+        # return max(self.scan_data.range_min, min(range_value, self.scan_data.range_max))
     
     def get_min_range_in_arc(self, start_angle: float, end_angle: float) -> float:
         """
