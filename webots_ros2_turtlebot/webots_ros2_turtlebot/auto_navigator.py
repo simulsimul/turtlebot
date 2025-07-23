@@ -42,8 +42,8 @@ class AutoNavigator(Node):
         self.current_pose = None
         self.state = 'FORWARD'  # FORWARD, TURN_LEFT, TURN_RIGHT, STOP
         self.obstacle_distance = 0.05  # meters
-        self.linear_speed = 0.15  # m/s
-        self.angular_speed = 0.5  # rad/s
+        self.linear_speed = 0.10  # m/s
+        self.angular_speed = 0.25  # rad/s
         
         # Auto-start behavior
         self.start_delay = 5.0  # seconds
