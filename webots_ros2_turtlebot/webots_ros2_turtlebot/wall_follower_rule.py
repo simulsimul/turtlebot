@@ -17,13 +17,13 @@ class WallFollowerRule(WallFollowerBase):
         super().__init__('wall_follower_rule')
         
         # Rule-based algorithm parameters
-        self.front_threshold = 0.25  # meters
-        self.side_threshold = 0.25   # meters
-        self.corner_threshold = 0.25 # meters
+        self.front_threshold = 0.3  # meters
+        self.side_threshold = 0.4   # meters
+        self.corner_threshold = 0.3 # meters
         
         # Speed parameters (converted from Webots values)
-        self.base_speed = 0.10      # m/s (was BASE_SPEED = 5 in Webots)
-        self.turn_speed_ratio = 0.1  # for turning (was BASE_SPEED/9 in Webots)
+        self.base_speed = 0.05      # m/s (was BASE_SPEED = 5 in Webots)
+        self.turn_speed_ratio = 0.02  # for turning (was BASE_SPEED/9 in Webots)
         
         self.get_logger().info('Rule-based wall follower initialized')
         self.get_logger().info(f'Thresholds - Front: {self.front_threshold}m, '
@@ -35,35 +35,33 @@ class WallFollowerRule(WallFollowerBase):
         Based on truth table from original Webots code
         """
         # Get sensor readings at key angles
-        front_dist = self.get_range_at_angle(0)    # Front (0°)
-        left_dist = self.get_range_at_angle(90)    # Left (90°)
-        corner_dist = self.get_range_at_angle(45)  # Left corner (45°)
+        front_dist = self.get_range_at_angle(0)   
+        left_dist = self.get_range_at_angle(90)    
+        corner_dist_1 = self.get_range_at_angle(30)  
+        corner_dist_2 = self.get_range_at_angle(60)  
         
         # Wall detection based on thresholds
         front_wall = front_dist < self.front_threshold
         left_wall = left_dist < self.side_threshold
-        left_corner = corner_dist < self.corner_threshold
+        left_corner_1 = corner_dist_1 < self.corner_threshold
+        left_corner_2 = corner_dist_2 < self.corner_threshold
         
         # Log detection status
         self.get_logger().info(
             f'Wall detection - Front: {front_wall} ({front_dist:.2f}m), '
             f'Left: {left_wall} ({left_dist:.2f}m), '
-            f'Corner: {left_corner} ({corner_dist:.2f}m)'
+            f'Corner_30: {left_corner_1} ({corner_dist_1:.2f}m)'
+            f'Corner_60: {left_corner_2} ({corner_dist_2:.2f}m)'
         )
         
-        """
-        # Apply rule-based logic (truth table)
+        # Apply rule-based logic
         if front_wall:
-            # Priority 1: Avoid front wall
             return self.rotate_right()
-        elif left_corner:
-            # Priority 2: Handle corner case
+        elif left_corner_1 & left_corner_2:
             return self.rotate_right()
         elif left_wall:
-            # Priority 3: Wall on left, move forward
             return self.move_forward()
         else:
-            # Priority 4: No wall on left, turn left to find wall
             return self.turn_left()
         """
         if front_wall:
@@ -74,6 +72,7 @@ class WallFollowerRule(WallFollowerBase):
             return self.rotate_right()
         else:
             return self.turn_left()
+        """
     
     def move_forward(self) -> Twist:
         """Move forward at base speed"""
