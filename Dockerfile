@@ -68,7 +68,7 @@ ENV RCUTILS_LOGGING_BUFFERED_STREAM=1
 # 벽 추종 알고리즘 선택 환경 변수 (실행 시 사용자 입력으로 결정)
 # ENV WALL_FOLLOWER_TYPE=pid
 # ENV WALL_FOLLOWER_TYPE=ml
-ENV WALL_FOLLOWER_TYPE=rule
+# ENV WALL_FOLLOWER_TYPE=rule
 
 # ARM64 (라즈베리파이)용 메모리 최적화 설정
 RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
@@ -153,26 +153,26 @@ echo "Checking xacro availability..."\n\
 which xacro || echo "xacro not found in PATH"\n\
 \n\
 # 사용자로부터 알고리즘 선택 받기\n\
-#echo "================================="\n\
-#echo "TurtleBot3 Wall Following Algorithm"\n\
-#echo "================================="\n\
-#echo "사용할 벽 추종 알고리즘을 선택하세요:"\n\
-#echo "1) rule  - 규칙 기반 알고리즘"\n\
-#echo "2) pid   - PID 제어 알고리즘"\n\
-#echo "3) ml    - 머신러닝 알고리즘"\n\
-#echo "================================="\n\
-#\n\
-#while true; do\n\
-#    read -p "선택 (rule/pid/ml): " WALL_FOLLOWER_TYPE\n\
-#    case "$WALL_FOLLOWER_TYPE" in\n\
-#        "rule"|"pid"|"ml")\n\
-#            echo "선택된 알고리즘: $WALL_FOLLOWER_TYPE"\n\
-#            break\n\
-#            ;;\n\
-#        *)\n\
-#            echo "잘못된 입력입니다. rule, pid, ml 중 하나를 입력하세요."\n\
-#            ;;\n\
-#    esac\n\
+echo "================================="\n\
+echo "TurtleBot3 Wall Following Algorithm"\n\
+echo "================================="\n\
+echo "사용할 벽 추종 알고리즘을 선택하세요:"\n\
+echo "1) rule  - 규칙 기반 알고리즘"\n\
+echo "2) pid   - PID 제어 알고리즘"\n\
+echo "3) ml    - 머신러닝 알고리즘"\n\
+echo "================================="\n\
+\n\
+while true; do\n\
+    read -p "선택 (rule/pid/ml): " WALL_FOLLOWER_TYPE\n\
+    case "$WALL_FOLLOWER_TYPE" in\n\
+        "rule"|"pid"|"ml")\n\
+            echo "선택된 알고리즘: $WALL_FOLLOWER_TYPE"\n\
+            break\n\
+            ;;\n\
+        *)\n\
+            echo "잘못된 입력입니다. rule, pid, ml 중 하나를 입력하세요."\n\
+            ;;\n\
+    esac\n\
 #done\n\
 #\n\
 #echo ""\n\

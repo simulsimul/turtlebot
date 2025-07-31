@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-
-"""
-Machine Learning-based Wall Following Algorithm for TurtleBot3
-Ported from Webots simulation to real hardware ROS2 node
-"""
-
 import rclpy
 from geometry_msgs.msg import Twist
 from .wall_follower_base import WallFollowerBase
@@ -14,7 +8,6 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 class WallFollowerML(WallFollowerBase):
-    """Machine Learning-based wall following algorithm using trained models"""
     
     def __init__(self):
         super().__init__('wall_follower_ml')
@@ -40,7 +33,6 @@ class WallFollowerML(WallFollowerBase):
         self.get_logger().info(f'Model trained: {self.model_trained}')
     
     def initialize_model(self):
-        """Initialize and train the machine learning model"""
         try:
             # Import ML libraries
             from sklearn.tree import DecisionTreeRegressor
@@ -86,7 +78,6 @@ class WallFollowerML(WallFollowerBase):
             self.get_logger().error(f'Error initializing model: {e}')
     
     def load_training_data(self):
-        """Load training data from CSV file"""
         try:
             package_share_directory = get_package_share_directory('webots_ros2_turtlebot')
             data_path = os.path.join(package_share_directory, 'resource', 'data.csv')
@@ -111,7 +102,6 @@ class WallFollowerML(WallFollowerBase):
             return None
     
     def prepare_data(self, data):
-        """Prepare and clean training data"""
         try:
             # Filter out NaN and infinite values
             n_rows, n_cols = data.shape
@@ -146,12 +136,9 @@ class WallFollowerML(WallFollowerBase):
             return None, None
     
     def compute_control_command(self) -> Twist:
-        """
-        Implement ML-based wall following logic
-        """
         if not self.model_trained:
             self.get_logger().warn('Model not trained, stopping robot')
-            return Twist()  # Stop robot
+            return Twist()
         
         # Get sensor readings (same as in training data)
         front_dist = self.get_range_at_angle(0)    # Front (0°)
@@ -167,9 +154,6 @@ class WallFollowerML(WallFollowerBase):
         return self.ml_control(front_dist, left_dist, corner_dist)
     
     def ml_control(self, front_dist: float, left_dist: float, corner_dist: float) -> Twist:
-        """
-        Apply ML model to predict control commands
-        """
         try:
             # Constrain input values to reasonable range
             front_dist = self.constrain(front_dist, 0.0, 10.0)
@@ -195,7 +179,7 @@ class WallFollowerML(WallFollowerBase):
             
             # Convert to Twist message
             twist = self.wheel_speeds_to_twist(
-                left_speed / self.wheel_radius,   # Convert to rad/s
+                left_speed / self.wheel_radius,
                 right_speed / self.wheel_radius
             )
             
@@ -209,10 +193,9 @@ class WallFollowerML(WallFollowerBase):
             
         except Exception as e:
             self.get_logger().error(f'Error in ML control: {e}')
-            return Twist()  # Stop robot on error
+            return Twist()
     
     def rotate_right(self) -> Twist:
-        """Rotate right to avoid front obstacle"""
         twist = Twist()
         twist.linear.x = 0.0
         twist.angular.z = -0.5  # Rotate right
@@ -220,7 +203,6 @@ class WallFollowerML(WallFollowerBase):
         return twist
     
     def set_model_type(self, model_type: str):
-        """Change model type and retrain"""
         if model_type in ['decision_tree', 'neural_network']:
             self.model_type = model_type
             self.get_logger().info(f'Model type changed to: {model_type}')
@@ -229,7 +211,6 @@ class WallFollowerML(WallFollowerBase):
             self.get_logger().error(f'Invalid model type: {model_type}')
 
 def main(args=None):
-    """Main function to run the ML-based wall follower"""
     rclpy.init(args=args)
     
     try:

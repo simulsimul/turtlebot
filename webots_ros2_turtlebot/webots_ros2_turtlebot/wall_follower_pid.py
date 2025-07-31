@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-
-"""
-PID-based Wall Following Algorithm for TurtleBot3
-Ported from Webots simulation to real hardware ROS2 node
-"""
-
 import rclpy
 from geometry_msgs.msg import Twist
 from .wall_follower_base import WallFollowerBase
