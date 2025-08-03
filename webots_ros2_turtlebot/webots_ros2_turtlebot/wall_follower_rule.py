@@ -18,7 +18,7 @@ class WallFollowerRule(WallFollowerBase):
 
         # Rule-based algorithm parameters
         self.front_threshold = 0.16  # meters
-        self.side_threshold = 0.23   # meters
+        self.side_threshold = 0.25   # meters
         self.corner_threshold = 0.16 # meters
 
         # Speed parameters (converted from Webots values)
@@ -36,7 +36,7 @@ class WallFollowerRule(WallFollowerBase):
         """
         # Get sensor readings at key angles
         front_dist = self.get_range_at_angle(0)
-        left_dist = self.get_range_at_angle(75)
+        left_dist = self.get_range_at_angle(60)
         corner_dist_1 = self.get_range_at_angle(30)
         corner_dist_2 = self.get_range_at_angle(45)
 
@@ -57,7 +57,7 @@ class WallFollowerRule(WallFollowerBase):
         # Apply rule-based logic
         if front_wall:
             return self.rotate_right()
-        elif left_corner_1 | left_corner_2:
+        elif left_corner_1 & left_corner_2:
             return self.rotate_right()
         elif left_wall:
             return self.move_forward()
@@ -86,8 +86,8 @@ class WallFollowerRule(WallFollowerBase):
     def turn_left(self) -> Twist:
         """Turn left while moving forward"""
         twist = Twist()
-        twist.linear.x = self.base_speed * self.turn_speed_ratio
-        twist.angular.z = 0.35  # Convert to angular velocity
+        twist.linear.x = self.base_speed * self.turn_speed_ratio * 0.1
+        twist.angular.z = 0.4  # Convert to angular velocity
 
         self.get_logger().debug('Action: Turning left')
         return twist
